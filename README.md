@@ -1,47 +1,10 @@
-![GitHub Release](https://img.shields.io/github/v/release/hexbyt3/Svraidbot)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/hexbyt3/Svraidbot/total?color=violet)
+![GitHub Release](https://img.shields.io/github/v/release/ThatOneCrab/TeraKlawf)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/ThatOneCrab/TeraKlawf/total?color=violet)
 
 
-# Sc/Vi RaidBot
+# Tera Klawf
  
 ## Hello, and welcome to my RaidBot Project.
-
-![image](https://github.com/user-attachments/assets/9d9b5244-9403-420d-8099-c6579b503073)
-![image](https://github.com/user-attachments/assets/023ba97e-0189-435d-9271-c7b3a1be7e54)
-![image](https://github.com/user-attachments/assets/cba6f9c1-ee80-4ef2-9853-527ae06e9a23)
-
-
-# How-To Video
-https://youtu.be/wlFE04oiqGs?si=EDoVRaocGyCapN9n
-
-
-# 📱 Access SVRaidBot from Any Device on Your Network
-
-![image](https://github.com/user-attachments/assets/cc4eb0f2-f3f7-4ee7-82f2-b771f6fbbd56)
-
-## Quick Setup
-
-### 1. Enable Network Access (choose one):
-- **Option A:** Right-click SVRaidBot.exe → Run as Administrator
-- **Option B:** Run in admin cmd: `netsh http add urlacl url=http://+:9090/ user=Everyone`
-
-### 2. Allow Through Firewall:
-Run in admin cmd:
-```cmd
-netsh advfirewall firewall add rule name="SVRaidBot Web" dir=in action=allow protocol=TCP localport=9090
-```
-
-### 3. Connect From Your Phone:
-- Get your PC's IP: `ipconfig` (look for IPv4 Address)
-- On your phone: `http://YOUR-PC-IP:9090`
-- Example: `http://192.168.1.100:9090`
-
-## Requirements
-- Same WiFi network
-- Windows Firewall rule (step 2)
-- Admin rights (first time only)
-
----
 
 
 # __Features__
@@ -50,7 +13,6 @@ netsh advfirewall firewall add rule name="SVRaidBot Web" dir=in action=allow pro
 ## Raid Requests
 __Adding Requests__
  - Users can request their own raids using command `ra <seed> <difficulty> <storyprogress>`.
- - I have an online seed finder located here for your users to use: [https://genpkm.com/raids/seeds/](https://genpkm.com/raids/seeds/index.php)
    
 __Removing Request__
 - Users can remove thier raid request by simply typing the `rqc` command.  This removes them from the queue.
@@ -86,7 +48,7 @@ __Limit Requests__
    - Example:  If i'm looking at Raidcalc and your settings were  Story Progress: 4* Unlocked and Stars: 3, you would add that seed in as `3739A70B-Goomy-3-4`
    - As of 10/25/23 I include two templates for you in the folder - paldeaseeds.txt and kitakamiseeds.txt - you can copy those seeds and add to your raidsv.txt file as a starting point.
   - Save `raidsv.txt` with your new changes.
-  - Start NotRaidBot and the list from raidsv.txt will now begin to populate the list inside of the setting `ActiveRaids`.  
+  - Start Tera Klawf and the list from raidsv.txt will now begin to populate the list inside of the setting `ActiveRaids`.  
  - SaveSeedsToFile - Set to true so that the bot saves a back up of your current ActiveRaids so you can paste them back to raidsv.txt if you ever need to.
  - RandomRotation - Set to true if you want the bot to do random raids in your ActiveRaids list while also keeping Requested raids a priority.
  - MysteryRaids - Set to true for the bot to randomly inject a shiny raid.  Cannot be used with RandomRotation on.
@@ -97,7 +59,6 @@ __Limit Requests__
 
 - **Embed Toggles**
  - RaidEmbedDescription - add any text you want to show on *all* embeds posted at the top.  
- - SelectedTeraIconType - This changes the icons used in your embed.  Icon1 are custom tera icons that look amazing.
  - IncludeMoves - set to true if you want to show the moves the raid mon will have in the embed.
  - IncludeRewards - set to true if you want to show the rewards the raid mon will have in the embed.
  - IncludeSeed - Set to true to show the current raid seed in the embed.
@@ -106,7 +67,7 @@ __Limit Requests__
  - RewardsToShow - A list of rewards you want to show on your embeds.
  - RequestEmbedTime - Time to wait to post user requested raids to public channel.
  - TakeScreenShot - Set to true to show screenshot of the game in your embeds.
- - ScreenshotTiming - Set to 1500ms or 22000ms to take different screenshots once in raid.
+ - ScreenshotTiming - Set to 0ms, 3500ms, or 10000ms to take different screenshots once in raid.
  - HideRaidCode - Hides raid code from embed.
 
 - **EventSettings**
@@ -133,15 +94,14 @@ __Limit Requests__
  - ScreenOff - Turns your screen off while playing to preserve LED/Power.   Or use commands `screenOff` or `screenOn`.
 - **DiscordSettings**
 - Token - Add your discord bot token you got from the [Discord Developer Portal](<https://discord.com/developers/applications/>)
-- CommandPrefix - the prefix your bot will use for commands.  Common is $
-- RoleSudo - Tell the bot who it's daddy (or mommy) is.  Go to your server in a channel the bot has permission to read and type `$sudo @YOURUSERNAME`.  The bot is now under your command.
-- ChannelWhitelist - these are channels that you want your bot to listen to commands in.  Use `$addchannel` to add a channel to the bot automatically.
-- LoggingChannels - if you want to log all the stuff your bot puts in the Log Tab of the program but in a channel, use the `$loghere` command.
-- EchoChannels - These are channels you want your raid embeds to post to.  Use command `$aec` to add the channel to this list.
+- RoleSudo - Tell the bot who it's owner is.  Go to your server in a channel the bot has permission to read and type `@yourbot sudo @YOURUSERNAME`.  The bot is now under your command.
+- ChannelWhitelist - these are channels that you want your bot to listen to commands in.  Use `@yourbot addchannel` to add a channel to the bot automatically.
+- LoggingChannels - if you want to log all the stuff your bot puts in the Log Tab of the program but in a channel, use the `@yourbot loghere` command.
+- EchoChannels - These are channels you want your raid embeds to post to.  Use command `@yourbot aec` to add the channel to this list.
 
 ## __Announcement Settings__
 
-This is helpful if your bot is in several servers and you need to let everyone know that's using it that the bot is online, offline, napping, etc. without having to send out tons of messages yourself.  Just use the `$announce TEXT HERE`command to send out a nice announcement wrapped in a beautiful embed with your choice of thumbnail image and color.
+This is helpful if your bot is in several servers and you need to let everyone know that's using it that the bot is online, offline, napping, etc. without having to send out tons of messages yourself.  Just use the `@yourbot announce TEXT HERE`command to send out a nice announcement wrapped in a beautiful embed with your choice of thumbnail image and color.
 - AnnouncementThumbnailOption - Set this to your fave pokemon image that i've premade.
 - CustomAnnouncementThumbnailURL - Put the url to your own thumbnail image if you don't like mine.
 - AnnouncementEmbedColor - Self explanatory.
