@@ -56,6 +56,7 @@ namespace SysBot.Pokemon.SV.BotRaid.Language
         /// Builds a localized stats field based on the user's preferred language
         /// </summary>
         /// <param name="language">The user's preferred language</param>
+        /// <param name="teraType">The Pokemon's Tera Type</param>
         /// <param name="level">The Pokemon's level</param>
         /// <param name="gender">The Pokemon's gender</param>
         /// <param name="nature">The Pokemon's nature</param>
@@ -70,6 +71,7 @@ namespace SysBot.Pokemon.SV.BotRaid.Language
         /// <returns>A localized stats string</returns>
         public static string BuildLocalizedStatsField(
             LanguageOptions language,
+            string teraType,
             string level,
             string gender,
             string nature,
@@ -84,6 +86,7 @@ namespace SysBot.Pokemon.SV.BotRaid.Language
         {
             StringBuilder statsField = new();
 
+            statsField.AppendLine($"**{LocalizeFieldName("Tera Type", language)}**: {teraType}");
             statsField.AppendLine($"**{LocalizeFieldName("Level", language)}**: {level}");
             statsField.AppendLine($"**{LocalizeFieldName("Gender", language)}**: {LocalizeGender(gender, language)}");
             statsField.AppendLine($"**{LocalizeFieldName("Nature", language)}**: {nature}");

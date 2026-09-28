@@ -3413,6 +3413,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 // Build localized stats field
                 string statsField = EmbedLocalizationHelper.BuildLocalizedStatsField(
                     language,
+                    RaidEmbedInfoHelpers.RaidSpeciesTeraType,
                     RaidEmbedInfoHelpers.RaidLevel.ToString(),
                     RaidEmbedInfoHelpers.RaidSpeciesGender,
                     RaidEmbedInfoHelpers.RaidSpeciesNature,
