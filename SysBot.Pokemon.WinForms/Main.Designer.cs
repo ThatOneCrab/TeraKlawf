@@ -5,6 +5,7 @@ using System.Drawing.Drawing2D;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.IO;
 
 namespace SysBot.Pokemon.WinForms
 {
@@ -39,6 +40,17 @@ namespace SysBot.Pokemon.WinForms
             // Initialize timer for animations
             animationTimer = new System.Windows.Forms.Timer(this.components);
             animationTimer.Interval = 16; // Back to 60fps for smooth animations
+            animationTimer.Tick += (s, e) =>
+            {
+                // Update rainbow animation
+                _rainbowOffset += 2f;
+                if (_rainbowOffset >= 360f)
+                    _rainbowOffset = 0f;
+
+                // Invalidate logo for animation
+                if (logoPanel != null)
+                    logoPanel.Invalidate();
+            };
             animationTimer.Tick += AnimationTimer_Tick;
 
             // Initialize tray icon
@@ -427,7 +439,31 @@ namespace SysBot.Pokemon.WinForms
             btnRefreshMap.Click += RefreshMap_Click;
 
             // Bots Panel
-            botsPanel.BackColor = Color.Transparent;
+            botsPanel.BackColor = Color.FromArgb(28, 28, 28);
+
+            // Try to load background.gif
+            try
+            {
+                string[] possiblePaths = new[]
+                {
+                    Path.Combine(AppContext.BaseDirectory, "background.gif"),
+                    Path.Combine(AppContext.BaseDirectory, "Resources", "background.gif"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "background.gif"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "Resources", "background.gif"),
+                };
+
+                foreach (var imagePath in possiblePaths)
+                {
+                    if (File.Exists(imagePath))
+                    {
+                        botsPanel.BackgroundImage = Image.FromFile(imagePath);
+                        botsPanel.BackgroundImageLayout = ImageLayout.Stretch;
+                        break;
+                    }
+                }
+            }
+            catch { /* If GIF fails to load, just use solid color */ }
+
             botsPanel.Controls.Add(FLP_Bots);
             botsPanel.Controls.Add(botHeaderPanel);
             botsPanel.Dock = DockStyle.Fill;
@@ -508,6 +544,8 @@ namespace SysBot.Pokemon.WinForms
 
             // Bot List Panel
             FLP_Bots.AutoScroll = true;
+            FLP_Bots.HorizontalScroll.Enabled = false; // Disable horizontal scrollbar
+            FLP_Bots.HorizontalScroll.Visible = false;
             FLP_Bots.BackColor = Color.Transparent;
             FLP_Bots.Dock = DockStyle.Fill;
             FLP_Bots.FlowDirection = FlowDirection.TopDown;
@@ -1093,37 +1131,130 @@ namespace SysBot.Pokemon.WinForms
             control.Region = new Region(path);
         }
 
+        private Image _logoImage;
+        private float _rainbowOffset = 0f;
+
         private void LogoPanel_Paint(object sender, PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
 
-            // Cache the gradient brush to prevent recreation
-            if (_logoBrush == null)
+            // Try to load and display an image background
+            if (_logoImage == null)
             {
-                _logoBrush = new LinearGradientBrush(
-                    logoPanel.ClientRectangle,
-                    Color.FromArgb(88, 101, 242),
-                    Color.FromArgb(87, 242, 135),
-                    LinearGradientMode.ForwardDiagonal);
+                try
+                {
+                    // Try multiple possible locations for the image
+                    string[] possiblePaths = new[]
+                    {
+                        Path.Combine(AppContext.BaseDirectory, "logo_background.png"),
+                        Path.Combine(AppContext.BaseDirectory, "Resources", "logo_background.png"),
+                        Path.Combine(Directory.GetCurrentDirectory(), "logo_background.png"),
+                        Path.Combine(Directory.GetCurrentDirectory(), "Resources", "logo_background.png"),
+                    };
+
+                    foreach (var imagePath in possiblePaths)
+                    {
+                        if (File.Exists(imagePath))
+                        {
+                            _logoImage = Image.FromFile(imagePath);
+                            break;
+                        }
+                    }
+
+                    // If still no image, use gradient
+                    if (_logoImage == null)
+                    {
+                        if (_logoBrush == null)
+                        {
+                            _logoBrush = new LinearGradientBrush(
+                                logoPanel.ClientRectangle,
+                                Color.FromArgb(88, 101, 242),
+                                Color.FromArgb(87, 242, 135),
+                                LinearGradientMode.ForwardDiagonal);
+                        }
+                        e.Graphics.FillRectangle(_logoBrush, logoPanel.ClientRectangle);
+                    }
+                }
+                catch
+                {
+                    // Fallback to gradient on any error
+                    if (_logoBrush == null)
+                    {
+                        _logoBrush = new LinearGradientBrush(
+                            logoPanel.ClientRectangle,
+                            Color.FromArgb(88, 101, 242),
+                            Color.FromArgb(87, 242, 135),
+                            LinearGradientMode.ForwardDiagonal);
+                    }
+                    e.Graphics.FillRectangle(_logoBrush, logoPanel.ClientRectangle);
+                }
             }
 
-            e.Graphics.FillRectangle(_logoBrush, logoPanel.ClientRectangle);
+            // Draw the image if loaded
+            if (_logoImage != null)
+            {
+                e.Graphics.DrawImage(_logoImage, logoPanel.ClientRectangle);
+            }
+            else if (_logoBrush != null)
+            {
+                // Draw gradient fallback
+                e.Graphics.FillRectangle(_logoBrush, logoPanel.ClientRectangle);
+            }
 
-            // Draw text with glow
+            // Draw text with rainbow glow and white border
             using var font = new Font("Segoe UI", 22F, FontStyle.Bold);
-            var text = "S/V RAIDBOT";
+            var text = "Tera Klawf";
             var textSize = e.Graphics.MeasureString(text, font);
-            var x = (logoPanel.Width - textSize.Width) / 2;
-            var y = (logoPanel.Height - textSize.Height) / 2;
+            var x = (logoPanel.Width - textSize.Width) / 2; // Center horizontally
+            var y = -5; // Very top edge of the panel
 
-            // Simple glow effect - reduced layers
-            using var glowBrush = new SolidBrush(Color.FromArgb(30, 255, 255, 255));
-            e.Graphics.DrawString(text, font, glowBrush, x - 2, y - 2);
+            // Rainbow color function based on hue
+            Color GetRainbowColor(float hue)
+            {
+                hue = hue % 360f;
+                if (hue < 0) hue += 360f;
 
-            // Main text
-            using var textBrush = new SolidBrush(Color.FromArgb(18, 18, 18));
-            e.Graphics.DrawString(text, font, textBrush, x, y);
+                float c = 1f; // chroma
+                float hPrime = hue / 60f;
+                float x1 = c * (1f - Math.Abs((hPrime % 2f) - 1f));
+
+                float r = 0, g = 0, b = 0;
+                if (hPrime >= 0 && hPrime < 1) { r = c; g = x1; b = 0; }
+                else if (hPrime >= 1 && hPrime < 2) { r = x1; g = c; b = 0; }
+                else if (hPrime >= 2 && hPrime < 3) { r = 0; g = c; b = x1; }
+                else if (hPrime >= 3 && hPrime < 4) { r = 0; g = x1; b = c; }
+                else if (hPrime >= 4 && hPrime < 5) { r = x1; g = 0; b = c; }
+                else if (hPrime >= 5 && hPrime < 6) { r = c; g = 0; b = x1; }
+
+                return Color.FromArgb(255, (int)(r * 255), (int)(g * 255), (int)(b * 255));
+            }
+
+            // Draw white glowing border
+            for (int i = 3; i > 0; i--)
+            {
+                var borderBrush = new SolidBrush(Color.FromArgb((int)(100 / i), 255, 255, 255));
+                e.Graphics.DrawString(text, font, borderBrush, x - i, y - i);
+                e.Graphics.DrawString(text, font, borderBrush, x + i, y - i);
+                e.Graphics.DrawString(text, font, borderBrush, x - i, y + i);
+                e.Graphics.DrawString(text, font, borderBrush, x + i, y + i);
+                borderBrush.Dispose();
+            }
+
+            // Draw rainbow text with glow
+            var rainbowColor = GetRainbowColor(_rainbowOffset);
+            using var rainbowBrush = new SolidBrush(rainbowColor);
+
+            // Glow layers
+            for (int i = 5; i > 0; i--)
+            {
+                var glowColor = Color.FromArgb((int)(30 / (i * 0.5f)), rainbowColor.R, rainbowColor.G, rainbowColor.B);
+                using var glowBrush = new SolidBrush(glowColor);
+                e.Graphics.DrawString(text, font, glowBrush, x - i, y - i);
+            }
+
+            // Main rainbow text
+            e.Graphics.DrawString(text, font, rainbowBrush, x, y);
         }
 
         private void HeaderPanel_Paint(object sender, PaintEventArgs e)

@@ -113,25 +113,14 @@ namespace SysBot.Pokemon.WinForms
             }
 
             LoadControls();
-            Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "S/V RaidBot" : Config.Hub.BotName)} {SVRaidBot.Version} ({Config.Mode})";
-            trayIcon.Text = (Config?.Hub?.BotName != null && !string.IsNullOrEmpty(Config.Hub.BotName)) ? Config.Hub.BotName : "S/V RaidBot";
+            Text = $"{(string.IsNullOrEmpty(Config.Hub.BotName) ? "Tera Klawf" : Config.Hub.BotName)} {SVRaidBot.Version} ({Config.Mode})";
+            trayIcon.Text = (Config?.Hub?.BotName != null && !string.IsNullOrEmpty(Config.Hub.BotName)) ? Config.Hub.BotName : "Tera Klawf";
             _ = Task.Run(BotMonitor);
             InitUtil.InitializeStubs(Config.Mode);
             // Start periodic update checks
             StartUpdateCheckTimer();
 
             LogUtil.LogInfo($"Bot initialization complete", "System");
-            _ = Task.Run(() =>
-            {
-                try
-                {
-                    this.InitWebServer();
-                }
-                catch (Exception ex)
-                {
-                    LogUtil.LogError($"Failed to initialize web server: {ex.Message}", "System");
-                }
-            });
         }
 
         private void RTB_Logs_TextChanged(object sender, EventArgs e)
@@ -235,10 +224,9 @@ namespace SysBot.Pokemon.WinForms
                 WindowState = FormWindowState.Minimized;
                 ShowInTaskbar = false;
                 trayIcon.Visible = true;
-                trayIcon.ShowBalloonTip(2000, "S/V RaidBot", "Application minimized to system tray", ToolTipIcon.Info);
+                trayIcon.ShowBalloonTip(2000, "Tera Klawf", "Application minimized to system tray", ToolTipIcon.Info);
                 return;
             }
-            this.StopWebServer();
 
             // Delete the port info file
             try
@@ -561,6 +549,18 @@ namespace SysBot.Pokemon.WinForms
             isExiting = true;
             trayIcon.Dispose();
             Application.Exit();
+        }
+
+        // Update rainbow animation for logo
+        public void UpdateRainbowAnimation()
+        {
+            // Access the _rainbowOffset field from Designer through reflection
+            // or through a public method. Since _rainbowOffset is private in Designer,
+            // we trigger a repaint which will handle the animation
+            if (logoPanel != null)
+            {
+                logoPanel.Invalidate();
+            }
         }
     }
 

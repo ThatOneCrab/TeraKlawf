@@ -9,15 +9,12 @@ using System.Threading.Tasks;
 
 namespace SysBot.Pokemon.Discord
 {
-    // src: https://github.com/foxbot/patek/blob/master/src/Patek/Modules/InfoModule.cs
-    // ISC License (ISC)
-    // Copyright 2017, Christopher F. <foxbot@protonmail.com>
     public class InfoModule : ModuleBase<SocketCommandContext>
     {
         private const string detail = "I am an Open Source RaidBot powered by PKHeX.Core and other open-source software.";
         public const string version = SVRaidBot.Version;
         private const string support = SVRaidBot.Repo;
-        private const ulong DisallowedUserId = 195756980873199618;
+        private const ulong DisallowedUserId = 211598607848046594;
 
         [Command("info")]
         [Alias("about", "whoami", "owner")]
@@ -29,7 +26,7 @@ namespace SysBot.Pokemon.Discord
                 return;
             }
             var app = await Context.Client.GetApplicationInfoAsync().ConfigureAwait(false);
-            var programIconUrl = "https://raw.githubusercontent.com/hexbyt3/sprites/main/imgs/icon4.png";
+            var programIconUrl = "https://raw.githubusercontent.com/ThatOneCrab/sprites/refs/heads/main/Cyberklawf.png";
             var builder = new EmbedBuilder
             {
                 Color = new Color(114, 137, 218),
@@ -37,9 +34,9 @@ namespace SysBot.Pokemon.Discord
                 ImageUrl = programIconUrl
             };
 
-            builder.AddField("# __Bot Info__",
+            builder.AddField(" __Bot Info__",
                 $"- **Version**: {version}\n" +
-                $"- [Download SVRaidBot]({support})\n- [Join Our Discord!](https://notpaldea.net)\n" +
+                $"- [Download Tera Klawf]({support})\n- [Join Our Discord!](https://klawf.net)\n" +
                 $"- {Format.Bold("Owner")}: {app.Owner} ({app.Owner.Id})\n" +
                 $"- {Format.Bold("Uptime")}: {GetUptime()}\n" +
                 $"- {Format.Bold("Core Version")}: {GetVersionInfo("PKHeX.Core")}\n" +
@@ -49,8 +46,8 @@ namespace SysBot.Pokemon.Discord
             builder.AddField("Stats",
                 $"- {Format.Bold("Guilds")}: {Context.Client.Guilds.Count}\n" +
                 $"- {Format.Bold("Channels")}: {Context.Client.Guilds.Sum(g => g.Channels.Count)}\n" +
-                $"- {Format.Bold("Users")}: {Context.Client.Guilds.Sum(g => g.MemberCount)}\n" +
-                $"{Format.Bold($"\nVisit [NotPaldea.net]({support}) for more information.")}\n"
+                $"- {Format.Bold("Users")}: {Context.Client.Guilds.Sum(g => g.MemberCount)}\n" 
+                
                 );
 
             await ReplyAsync("Here's a bit about me!", embed: builder.Build()).ConfigureAwait(false);

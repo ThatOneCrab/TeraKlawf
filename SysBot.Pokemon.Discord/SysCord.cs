@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord;
 using Discord.Commands;
 using Discord.Rest;
 using Discord.WebSocket;
@@ -34,8 +35,6 @@ namespace SysBot.Pokemon.Discord
         public readonly PokeRaidHub<T> Hub;
         private const int MaxReconnectDelay = 60000; // 1 minute
         private int _reconnectAttempts = 0;
-        // Keep the CommandService and DI container around for use with commands.
-        // These two types require you install the Discord.Net.Commands package.
         private readonly CommandService _commands;
 
         private readonly IServiceProvider _services;
@@ -55,29 +54,17 @@ namespace SysBot.Pokemon.Discord
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Info,
-                GatewayIntents = GatewayIntents.Guilds
-                       | GatewayIntents.GuildMessages
-                       | GatewayIntents.DirectMessages
-                       | GatewayIntents.MessageContent
-                       | GatewayIntents.GuildMessageReactions
-                       | GatewayIntents.GuildMembers,
-                MessageCacheSize = 500,
-                AlwaysDownloadUsers = true,
+                GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.DirectMessages | GatewayIntents.GuildMessageReactions,
+                MessageCacheSize = 0,
+                AlwaysDownloadUsers = false,
                 ConnectionTimeout = 30000,
             });
             _client.Disconnected += (ex) => HandleDisconnect(ex);
 
             _commands = new CommandService(new CommandServiceConfig
             {
-                // Again, log level:
                 LogLevel = LogSeverity.Info,
-
-                // This makes commands get run on the task thread pool instead on the websocket read thread.
-                // This ensures long running logic can't block the websocket connection.
                 DefaultRunMode = Hub.Config.Discord.AsyncCommands ? RunMode.Async : RunMode.Sync,
-
-                // There's a few more properties you can set,
-                // for example, case-insensitive commands.
                 CaseSensitiveCommands = false,
             });
 
@@ -172,22 +159,32 @@ namespace SysBot.Pokemon.Discord
 
         public async Task MainAsync(string apiToken, CancellationToken token)
         {
-            // Centralize the logic for commands into a separate method.
-            await InitCommands().ConfigureAwait(false);
+            try
+            {
+                // Centralize the logic for commands into a separate method.
+                await InitCommands().ConfigureAwait(false);
 
-            // Login and connect.
-            await _client.LoginAsync(TokenType.Bot, apiToken).ConfigureAwait(false);
-            await _client.StartAsync().ConfigureAwait(false);
+                // Login and connect.
+                await _client.LoginAsync(TokenType.Bot, apiToken).ConfigureAwait(false);
+                await _client.StartAsync().ConfigureAwait(false);
 
-            var app = await _client.GetApplicationInfoAsync().ConfigureAwait(false);
-            Manager.Owner = app.Owner.Id;
-            App = app;
+                await Log(new LogMessage(LogSeverity.Info, "Discord", "Bot connected successfully")).ConfigureAwait(false);
 
-            // Start the connection status check
-            _ = CheckConnectionStatus(token);
+                var app = await _client.GetApplicationInfoAsync().ConfigureAwait(false);
+                Manager.Owner = app.Owner.Id;
+                App = app;
 
-            // Wait infinitely so your bot actually stays connected.
-            await MonitorStatusAsync(token).ConfigureAwait(false);
+                // Start the connection status check
+                _ = CheckConnectionStatus(token);
+
+                // Wait infinitely so your bot actually stays connected.
+                await MonitorStatusAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                await Log(new LogMessage(LogSeverity.Error, "Discord", $"Fatal error in MainAsync: {ex.Message}\n{ex.StackTrace}")).ConfigureAwait(false);
+                throw;
+            }
         }
 
         public async Task InitCommands()
@@ -201,189 +198,36 @@ namespace SysBot.Pokemon.Discord
                 var genModule = t.MakeGenericType(typeof(T));
                 await _commands.AddModuleAsync(genModule, _services).ConfigureAwait(false);
             }
-            var modules = _commands.Modules.ToList();
 
-            foreach (var module in modules)
-            {
-                var name = module.Name;
-                name = name.Replace("Module", "");
-                var gen = name.IndexOf('`');
-                if (gen != -1)
-                    name = name[..gen];
-            }
-
-            SharedRaidCodeHandler.UpdateMessageReactionCallback = async (messageId, channelId, isActive) =>
-            {
-                try
-                {
-                    var channel = await _client.GetChannelAsync(channelId) as IMessageChannel;
-                    if (channel != null)
-                    {
-                        var message = await channel.GetMessageAsync(messageId) as IUserMessage;
-                        if (message != null)
-                        {
-                            await message.RemoveAllReactionsAsync();
-
-                            if (isActive)
-                            {
-                                await message.AddReactionAsync(new Emoji("✅"));
-                                Log(new LogMessage(LogSeverity.Info, "RaidEmbed", $"Added green check reaction to message {messageId} in channel {channelId}"));
-                            }
-                            else
-                            {
-                                await message.AddReactionAsync(new Emoji("🚫"));
-                                Log(new LogMessage(LogSeverity.Info, "RaidEmbed", $"Added red X reaction to message {messageId} in channel {channelId}"));
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log(new LogMessage(LogSeverity.Error, "RaidEmbed", $"Error updating reactions: {ex.Message}"));
-                }
-            };
-
-            // Subscribe a handler to see if a message invokes a command.
+            // Subscribe handlers
             _client.Ready += LoadLoggingAndEcho;
             _client.MessageReceived += HandleMessageAsync;
             _client.ReactionAdded += HandleReactionAddedAsync;
             _client.ReactionAdded += ExtraCommandUtil<T>.HandleReactionAsync;
         }
 
-        private async Task HandleReactionAddedAsync(Cacheable<IUserMessage, ulong> cachedMessage,
-            Cacheable<IMessageChannel, ulong> originChannel, SocketReaction reaction)
-        {
-            // Ignore reactions from bots (including our own)
-            if (reaction.User.Value.IsBot)
-                return;
-            if (reaction.Emote.Name != "✅")
-                return;
-            if (!SharedRaidCodeHandler.IsActiveRaidMessage(reaction.MessageId))
-                return;
-
-            var code = SharedRaidCodeHandler.GetRaidCodeForMessage(reaction.MessageId);
-            if (string.IsNullOrEmpty(code))
-                return;
-            var raidInfoDict = SharedRaidCodeHandler.GetRaidInfoDict(reaction.MessageId);
-            try
-            {
-                var dmChannel = await reaction.User.Value.CreateDMChannelAsync();
-                bool isShiny = raidInfoDict != null &&
-                              raidInfoDict.TryGetValue("IsShiny", out var shinyStr) &&
-                              bool.TryParse(shinyStr, out var shinyBool) &&
-                              shinyBool;
-
-                var embedColor = isShiny ? Color.Gold : Color.Blue;
-                string thumbnailUrl = raidInfoDict?.TryGetValue("ThumbnailUrl", out var thumbUrl) == true && !string.IsNullOrEmpty(thumbUrl)
-                    ? thumbUrl
-                    : "https://raw.githubusercontent.com/hexbyt3/sprites/main/imgs/combat.png";
-
-                var embed = new EmbedBuilder()
-                {
-                    Color = embedColor,
-                    Title = $"**Raid Code: {code}**",
-                    Description = "Please join quickly! The raid will start soon.",
-                    ThumbnailUrl = thumbnailUrl
-                };
-
-                if (raidInfoDict != null)
-                {
-                    string raidTitle = raidInfoDict.TryGetValue("RaidTitle", out var title) ? title : "Pokémon Raid";
-                    string teraIconUrl = raidInfoDict.TryGetValue("TeraIconUrl", out var iconUrl) ? iconUrl : "";
-
-                    embed.WithAuthor(new EmbedAuthorBuilder()
-                    {
-                        Name = raidTitle,
-                        IconUrl = teraIconUrl
-                    });
-
-                    StringBuilder statsBuilder = new StringBuilder();
-                    if (raidInfoDict.TryGetValue("Level", out var level)) statsBuilder.AppendLine($"**Level**: {level}");
-                    if (raidInfoDict.TryGetValue("Gender", out var gender)) statsBuilder.AppendLine($"**Gender**: {gender}");
-                    if (raidInfoDict.TryGetValue("Nature", out var nature)) statsBuilder.AppendLine($"**Nature**: {nature}");
-                    if (raidInfoDict.TryGetValue("Ability", out var ability)) statsBuilder.AppendLine($"**Ability**: {ability}");
-                    if (raidInfoDict.TryGetValue("IVs", out var ivs)) statsBuilder.AppendLine($"**IVs**: {ivs}");
-                    if (raidInfoDict.TryGetValue("Scale", out var scale)) statsBuilder.AppendLine($"**Scale**: {scale}");
-
-                    if (statsBuilder.Length > 0)
-                    {
-                        embed.AddField("**__Stats__**", statsBuilder.ToString(), true);
-                    }
-                    StringBuilder movesBuilder = new StringBuilder();
-                    if (raidInfoDict.TryGetValue("Moves", out var moves) && !string.IsNullOrEmpty(moves))
-                    {
-                        movesBuilder.AppendLine(moves);
-
-                        if (raidInfoDict.TryGetValue("ExtraMoves", out var extraMoves) && !string.IsNullOrEmpty(extraMoves))
-                        {
-                            movesBuilder.AppendLine("**Extra Moves:**");
-                            movesBuilder.AppendLine(extraMoves);
-                        }
-                    }
-
-                    if (movesBuilder.Length > 0)
-                    {
-                        embed.AddField("**__Moves__**", movesBuilder.ToString(), true);
-                    }
-                    else
-                    {
-                        embed.AddField("**__Moves__**", "No Moves To Display", true);
-                    }
-                    if (raidInfoDict.TryGetValue("DifficultyLevel", out var diffLevelStr) &&
-                        int.TryParse(diffLevelStr, out var diffLevel) &&
-                        diffLevel == 7 &&
-                        raidInfoDict.TryGetValue("RaidMechanics", out var mechanics) &&
-                        !string.IsNullOrEmpty(mechanics))
-                    {
-                        embed.AddField("**__7★ Raid Mechanics__**", mechanics, false);
-                    }
-                }
-
-                embed.WithFooter(new EmbedFooterBuilder()
-                {
-                    Text = $"Code requested at {DateTime.Now:yyyy-MM-dd HH:mm:ss}"
-                });
-                await dmChannel.SendMessageAsync(embed: embed.Build());
-
-                try
-                {
-                    var channel = await _client.GetChannelAsync(originChannel.Id) as IMessageChannel;
-                    if (channel != null)
-                    {
-                        var message = await channel.GetMessageAsync(reaction.MessageId) as IUserMessage;
-                        if (message != null)
-                        {
-                            await message.RemoveReactionAsync(reaction.Emote, reaction.UserId);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Just log but don't interrupt - removing the reaction is just for cleanliness
-                    Log(new LogMessage(LogSeverity.Warning, "RaidCode", $"Failed to remove reaction: {ex.Message}"));
-                }
-            }
-            catch (Exception ex)
-            {
-                Log(new LogMessage(LogSeverity.Error, "RaidCode", $"Failed to send raid code DM: {ex.Message}"));
-            }
-        }
-
         private async Task HandleMessageAsync(SocketMessage arg)
         {
+            // Log all messages for debugging
+            if (arg is SocketUserMessage msg)
+            {
+                await Log(new LogMessage(LogSeverity.Debug, "Message", $"Message received from {msg.Author.Username}: {msg.Content}")).ConfigureAwait(false);
+            }
+
             // Bail out if it's a System Message.
-            if (arg is not SocketUserMessage msg)
+            if (arg is not SocketUserMessage userMsg)
                 return;
 
             // We don't want the bot to respond to itself or other bots.
-            if (msg.Author.Id == _client.CurrentUser.Id || msg.Author.IsBot)
+            if (userMsg.Author.Id == _client.CurrentUser.Id || userMsg.Author.IsBot)
                 return;
 
-            // Create a number to track where the prefix ends and the command begins
+            // Check for @ mentions of the bot
             int pos = 0;
-            if (msg.HasStringPrefix(Hub.Config.Discord.CommandPrefix, ref pos))
+            if (userMsg.HasMentionPrefix(_client.CurrentUser, ref pos))
             {
-                bool handled = await TryHandleCommandAsync(msg, pos).ConfigureAwait(false);
+                await Log(new LogMessage(LogSeverity.Info, "Message", $"@ mention detected: {userMsg.Content}")).ConfigureAwait(false);
+                bool handled = await TryHandleCommandAsync(userMsg, pos).ConfigureAwait(false);
                 if (handled)
                     return;
             }
@@ -407,22 +251,33 @@ namespace SysBot.Pokemon.Discord
                 return true;
             }
 
-            // Execute the command. (result does not indicate a return value,
-            // rather an object stating if the command executed successfully).
+            // Execute the command.
             var guild = msg.Channel is SocketGuildChannel g ? g.Guild.Name : "Unknown Guild";
-            await Log(new LogMessage(LogSeverity.Info, "Command", $"Executing command from {guild}#{msg.Channel.Name}:@{msg.Author.Username}. Content: {msg}")).ConfigureAwait(false);
+            await Log(new LogMessage(LogSeverity.Info, "Command", $"Executing command from {guild}#{msg.Channel.Name}:@{msg.Author.Username}. Content: {msg.Content}")).ConfigureAwait(false);
+
             var result = await _commands.ExecuteAsync(context, pos, _services).ConfigureAwait(false);
 
-            if (result.Error == CommandError.UnknownCommand)
-                return false;
+            await Log(new LogMessage(LogSeverity.Info, "Command", $"Command result: IsSuccess={result.IsSuccess}, Error={result.Error}, Reason={result.ErrorReason}")).ConfigureAwait(false);
 
-            // Uncomment the following lines if you want the bot
-            // to send a message if it failed.
-            // This does not catch errors from commands with 'RunMode.Async',
-            // subscribe a handler for '_commands.CommandExecuted' to see those.
+            if (result.Error == CommandError.UnknownCommand)
+            {
+                await Log(new LogMessage(LogSeverity.Warning, "Command", $"Unknown command: {msg.Content.Substring(pos).Trim()}")).ConfigureAwait(false);
+                return false;
+            }
+
             if (!result.IsSuccess)
+            {
                 await msg.Channel.SendMessageAsync(result.ErrorReason).ConfigureAwait(false);
+            }
             return true;
+        }
+
+        private async Task HandleReactionAddedAsync(Cacheable<IUserMessage, ulong> cachedMessage,
+            Cacheable<IMessageChannel, ulong> originChannel, SocketReaction reaction)
+        {
+            // Raid code sharing functionality has been removed
+            // This handler is kept for compatibility but does nothing
+            await Task.CompletedTask;
         }
 
         private async Task MonitorStatusAsync(CancellationToken token)

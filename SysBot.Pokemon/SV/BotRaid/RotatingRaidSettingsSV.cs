@@ -262,10 +262,6 @@ namespace SysBot.Pokemon
             [DisplayName("Prevent Day Changes?")]
             [Category(FeatureToggle), Description("When enabled, the bot will roll back the time by 5 hours to keep your day from changing.  Be sure that when you start the bot the Switch Time is past 12:01am and before 7:00pm.")]
             public bool EnableTimeRollBack { get; set; } = true;
-
-            [DisplayName("Join Shared Raids Program")]
-            [Category(Hosting), Description("Enable to join the Shared Raids Program.")]
-            public bool JoinSharedRaidsProgram { get; set; } = true;
         }
 
         public class MoveTypeEmojiInfo
@@ -382,10 +378,6 @@ namespace SysBot.Pokemon
             [Category(Hosting), Description("Raid embed description will be shown on every raid posted at the top of the embed.")]
             [DisplayName("Raid Embed Description")]
             public string[] RaidEmbedDescription { get; set; } = Array.Empty<string>();
-
-            [Category(FeatureToggle), Description("Choose the TeraType Icon set to use in the author area of the embed.  Icon1 are custom, Icon2 is not.")]
-            [DisplayName("Tera Icon Choice")]
-            public TeraIconType SelectedTeraIconType { get; set; } = TeraIconType.Icon1;
 
             [Category(Hosting), Description("If true, the bot will show Moves on embeds.")]
             [DisplayName("Include Moves/Extra Moves in Embed?")]

@@ -24,6 +24,7 @@ namespace SysBot.Pokemon.WinForms
         private DateTime animationStart = DateTime.Now;
         private Color currentStatusColor = Color.FromArgb(87, 242, 135); // Green
         private Color targetStatusColor = Color.FromArgb(87, 242, 135);
+        private float rainbowOffset = 0f; // For rainbow gradient animation
 
         public BotController()
         {
@@ -38,6 +39,18 @@ namespace SysBot.Pokemon.WinForms
             ConfigureContextMenu();
             ConfigureChildControls();
             EnableDoubleBuffering();
+
+            // Start rainbow animation timer
+            var animationTimer = new System.Windows.Forms.Timer();
+            animationTimer.Interval = 50; // ~20 FPS - smoother timing
+            animationTimer.Tick += (s, e) =>
+            {
+                rainbowOffset += 0.01f; // Slower, smoother increment
+                if (rainbowOffset >= 1f)
+                    rainbowOffset = 0f; // Perfect reset for seamless loop
+                progressBar.Invalidate();
+            };
+            animationTimer.Start();
         }
 
         protected override CreateParams CreateParams
@@ -624,7 +637,7 @@ namespace SysBot.Pokemon.WinForms
                 }
             }
 
-            // Progress fill
+            // Progress fill with animated rainbow gradient
             if (progressValue > 0)
             {
                 var fillWidth = (int)(rect.Width * progressValue);
@@ -642,12 +655,62 @@ namespace SysBot.Pokemon.WinForms
                         }
                         path.CloseFigure();
 
-                        using (var brush = new LinearGradientBrush(fillRect,
-                            Color.FromArgb(88, 101, 242),
-                            Color.FromArgb(87, 242, 135),
-                            LinearGradientMode.Horizontal))
+                        // Rainbow gradient colors - extended for seamless looping
+                        Color[] rainbowColors = new[]
                         {
-                            g.FillPath(brush, path);
+                            Color.FromArgb(255, 0, 0),      // Red
+                            Color.FromArgb(255, 127, 0),    // Orange
+                            Color.FromArgb(255, 255, 0),    // Yellow
+                            Color.FromArgb(0, 255, 0),      // Green
+                            Color.FromArgb(0, 0, 255),      // Blue
+                            Color.FromArgb(75, 0, 130),     // Indigo
+                            Color.FromArgb(148, 0, 211),    // Violet
+                            Color.FromArgb(255, 0, 0)       // Red again for loop
+                        };
+
+                        // Fixed positions for colors
+                        float[] colorPositions = new[]
+                        {
+                            0.0f,
+                            1/7f,
+                            2/7f,
+                            3/7f,
+                            4/7f,
+                            5/7f,
+                            6/7f,
+                            1.0f
+                        };
+
+                        try
+                        {
+                            // Calculate gradient animation offset - shift the entire gradient smoothly
+                            float offsetPixels = (rainbowOffset * fillWidth);
+                            var gradientRect = new Rectangle(
+                                fillRect.X - (int)offsetPixels, 
+                                fillRect.Y, 
+                                fillRect.Width, 
+                                fillRect.Height);
+
+                            using (var brush = new LinearGradientBrush(gradientRect, Color.White, Color.White, LinearGradientMode.Horizontal))
+                            {
+                                var colorBlend = new ColorBlend(rainbowColors.Length);
+                                colorBlend.Colors = rainbowColors;
+                                colorBlend.Positions = colorPositions;
+                                brush.InterpolationColors = colorBlend;
+
+                                g.FillPath(brush, path);
+                            }
+                        }
+                        catch
+                        {
+                            // Fallback to simple gradient if animation fails
+                            using (var brush = new LinearGradientBrush(fillRect,
+                                Color.FromArgb(88, 101, 242),
+                                Color.FromArgb(87, 242, 135),
+                                LinearGradientMode.Horizontal))
+                            {
+                                g.FillPath(brush, path);
+                            }
                         }
 
                         // Glow effect

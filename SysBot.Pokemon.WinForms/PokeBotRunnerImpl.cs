@@ -1,5 +1,7 @@
 ﻿using PKHeX.Core;
+using SysBot.Base;
 using SysBot.Pokemon.Discord;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,7 +30,19 @@ namespace SysBot.Pokemon
             if (string.IsNullOrWhiteSpace(apiToken))
                 return;
             var bot = new SysCord<T>(this);
-            Task.Run(() => bot.MainAsync(apiToken, CancellationToken.None));
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await bot.MainAsync(apiToken, CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    var errorMsg = $"Discord bot failed to start: {ex.Message}\n{ex.StackTrace}";
+                    Console.WriteLine(errorMsg);
+                    SysBot.Base.LogUtil.LogError(errorMsg, "Discord");
+                }
+            });
         }
     }
 }

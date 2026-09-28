@@ -901,7 +901,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             _lostRaid++;
 
             // Mark embed as inactive since nobody joined
-            await SharedRaidCodeHandler.UpdateReactionsOnAllMessages(false, token);
+            // Raid code sharing functionality has been removed
 
             Log($"Nobody joined the raid. Current counts - Empty: {_emptyRaid}, Lost: {_lostRaid}");
             Log($"Lobby Method: {_settings.LobbyOptions.LobbyMethod}, Empty Limit: {_settings.LobbyOptions.EmptyRaidLimit}, Skip Limit: {_settings.LobbyOptions.SkipRaidLimit}");
@@ -994,7 +994,8 @@ namespace SysBot.Pokemon.SV.BotRaid
             try
             {
                 var trainers = new List<(ulong, RaidMyStatus)>();
-                await SharedRaidCodeHandler.UpdateReactionsOnAllMessages(false, token); // Mark Embed as not active
+                // Mark Embed as not active
+                // Raid code sharing functionality has been removed
                 Log("Preparing for battle!");
 
                 if (!await EnsureInRaid(token))
@@ -1062,7 +1063,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 Title = "Bot Reset",
                 Description = "The bot encountered an issue and is currently resetting. Please stand by.",
                 Color = Color.Red,
-                ThumbnailUrl = "https://raw.githubusercontent.com/hexbyt3/sprites/main/imgs/x.png"
+                ThumbnailUrl = "https://raw.githubusercontent.com/ThatOneCrab/sprites/main/imgs/x.png"
             };
             EchoUtil.RaidEmbed(null, "", embed);
 
@@ -2679,7 +2680,6 @@ namespace SysBot.Pokemon.SV.BotRaid
             {
                 msg = $"{banResultCFW!.Name} was found in the host's ban list.\n{banResultCFW.Comment}";
                 Log(msg);
-                await CurrentRaidInfo(null, "", false, true, false, false, null, false, token).ConfigureAwait(false);
                 await EnqueueEmbed(null, msg, false, true, false, false, token).ConfigureAwait(false);
                 return true;
             }
@@ -2771,7 +2771,6 @@ namespace SysBot.Pokemon.SV.BotRaid
                     if (full)
                     {
                         List<string> trainerNames = lobbyTrainers.Select(t => t.Item2.OT).ToList();
-                        await CurrentRaidInfo(trainerNames, "", false, false, false, false, null, true, token).ConfigureAwait(false);
                     }
 
                     if (full || DateTime.Now >= endTime)
@@ -3140,14 +3139,13 @@ namespace SysBot.Pokemon.SV.BotRaid
             // If this is a raid ending, starting with players, or disbanding, update reactions first
             if (disband || (names is not null && !upnext) || upnext)
             {
-                // Update to red X emoji - do this BEFORE clearing tracking
-                await SharedRaidCodeHandler.UpdateReactionsOnAllMessages(false, token);
+                // Raid code sharing functionality has been removed
             }
 
             // Only clear tracking when starting a new raid or when the raid is specifically over
             if ((!disband && names is null && !upnext && !raidstart) || upnext)
             {
-                SharedRaidCodeHandler.ClearAllRaidTracking();
+                // Raid code sharing functionality has been removed
             }
 
             // Update raid embed information before creating the embed (unless it's a disband or upnext message)
@@ -3253,7 +3251,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             }
 
             string disclaimer = _settings.ActiveRaids.Count > 1
-                                ? $"notpaldea.net"
+                                ? $"Tera Klawf"
                                 : "";
 
             var turl = string.Empty;
@@ -3298,7 +3296,7 @@ namespace SysBot.Pokemon.SV.BotRaid
                 turl = RaidExtensions<PK9>.PokeImg(pk, false, false);
             }
             if (_settings.ActiveRaids[_currentRaidIndex].Species is 0)
-                turl = "https://raw.githubusercontent.com/hexbyt3/sprites/main/imgs/combat.png";
+                turl = "https://raw.githubusercontent.com/ThatOneCrab/sprites/refs/heads/main/imgs/tipspic43.png";
 
             // Fetch the dominant color from the image
             (int R, int G, int B) dominantColor = await RaidExtensions<PK9>.GetDominantColorAsync(turl).ConfigureAwait(false);
@@ -3348,13 +3346,10 @@ namespace SysBot.Pokemon.SV.BotRaid
                 embed.Title = $"{EmbedLanguageManager.GetLocalizedText("Raid Ended - Preparing Next Raid", language)}!";
             }
 
-            if (!raidstart && !upnext && code != "Free For All")
-                await CurrentRaidInfo(null, code, false, false, false, false, turl, false, token).ConfigureAwait(false);
-
             // Only include footer if not posting 'upnext' embed with the 'Preparing Raid' title
             if (!(upnext && _settings.RaidSettings.TotalRaidsToHost == 0))
             {
-                string programIconUrl = $"https://raw.githubusercontent.com/hexbyt3/sprites/main/imgs/icon4.png";
+                string programIconUrl = $"https://raw.githubusercontent.com/ThatOneCrab/sprites/refs/heads/main/Cyberklawf.png";
                 int raidsIn_currentRaidIndex = _hub.Config.RotatingRaidSV.ActiveRaids.Count(r => !r.AddedByRACommand);
 
                 // Calculate uptime
@@ -3404,8 +3399,7 @@ namespace SysBot.Pokemon.SV.BotRaid
             // Prepare the tera icon URL
             string teraType = RaidEmbedInfoHelpers.RaidSpeciesTeraType;
             string englishTeraType = GetEnglishTypeNameFromLocalized(teraType).ToLower();
-            string folderName = _settings.EmbedToggles.SelectedTeraIconType == TeraIconType.Icon1 ? "icon1" : "icon2";
-            string teraIconUrl = $"https://raw.githubusercontent.com/hexbyt3/sprites/main/teraicons/{folderName}/{englishTeraType}.png";
+            string teraIconUrl = $"https://raw.githubusercontent.com/ThatOneCrab/sprites/main/teraicons/icon2/{englishTeraType}.png";
 
             // Only include author (header) if not posting 'upnext' embed with the 'Preparing Raid' title
             if (!(upnext && _settings.RaidSettings.TotalRaidsToHost == 0))
@@ -3603,18 +3597,14 @@ namespace SysBot.Pokemon.SV.BotRaid
                 {
                     try
                     {
-                        SharedRaidCodeHandler.AddActiveRaidMessageWithInfoDict(
-                            sentMessage.Id,
-                            sentMessage.Channel.Id,
-                            code,
-                            raidInfoDict);
+                        // Raid code sharing functionality has been removed
                     }
                     catch (Exception ex)
                     {
                         Log($"Error tracking raid message: {ex.Message}");
                     }
                 }
-                await SharedRaidCodeHandler.UpdateReactionsOnAllMessages(true, token);
+                // Raid code sharing functionality has been removed
             }
         }
 
@@ -3832,92 +3822,6 @@ namespace SysBot.Pokemon.SV.BotRaid
         }
 
         /// <summary>
-        /// RSA public key for encrypting raid codes
-        /// </summary>
-        private const string PUBLIC_KEY = @"-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArFbz7xXyQtO0j5JfcVW4
-lcIO3/+kL0GuNN4GgdZHNLWu6OX4Sv0BypvMOqdOTrGMMj+/v/1tRWamUh1qRSN+
-lmRsNLxj5A6kdwZk+UIU2LC6X3Y192FyVAvV/nYFgvdoyUzF1agvaTP7C7g8F3vH
-/zbGZdaH/4ZqKfBTU+NebCASaL+z+b7oIyl3j0RKdBAm5MJjYhSwj6j+1DpFbNgj
-ALwkMx63fBR0pKs+jJ8DcFrcJR50aVv1jfIAQpPIK5G6Dk/4hmV12Hdu5sSGLl40
-5AlAy18QKMi3y3vyvJ4wZnuY+gpsaTsuTlSau6FxpVzxosvv4kh9x1HVaoX2iGSh
-7QIDAQAB
------END PUBLIC KEY-----";
-
-        /// <summary>
-        /// Encrypts a raid code using RSA
-        /// </summary>
-        private static string? EncryptRaidCode(string code)
-        {
-            try
-            {
-                using RSA rsa = RSA.Create();
-                rsa.ImportFromPem(PUBLIC_KEY);
-                byte[] dataToEncrypt = Encoding.UTF8.GetBytes(code);
-                byte[] encryptedData = rsa.Encrypt(dataToEncrypt, RSAEncryptionPadding.Pkcs1);
-                return Convert.ToBase64String(encryptedData);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Encryption error: {ex.Message}");
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Sends raid information to a central server if enabled
-        /// </summary>
-        private async Task CurrentRaidInfo(List<string>? names, string code, bool hatTrick, bool disband, bool upnext, bool raidstart, string? imageUrl, bool lobbyFull, CancellationToken token)
-        {
-            if (!_settings.RaidSettings.JoinSharedRaidsProgram)
-                return;
-
-            string? encryptedCode = null;
-            if (!string.IsNullOrEmpty(code) && code != "FREE FOR ALL" && code != "IJ0LTU")
-            {
-                encryptedCode = EncryptRaidCode(code);
-            }
-
-            var raidInfo = new
-            {
-                RaidEmbedTitle = CleanEmojiStrings(RaidEmbedEnglishHelpers.RaidEmbedTitle),
-                RaidSpecies = RaidEmbedInfoHelpers.RaidSpecies.ToString(),
-                RaidEmbedInfoHelpers.RaidSpeciesForm,
-                RaidSpeciesGender = CleanEmojiStrings(RaidEmbedEnglishHelpers.RaidSpeciesGender),
-                RaidEmbedInfoHelpers.RaidLevel,
-                RaidEmbedInfoHelpers.RaidSpeciesIVs,
-                RaidEmbedEnglishHelpers.RaidSpeciesAbility,
-                RaidEmbedEnglishHelpers.RaidSpeciesNature,
-                RaidEmbedEnglishHelpers.RaidSpeciesTeraType,
-                Moves = CleanEmojiStrings(RaidEmbedEnglishHelpers.Moves),
-                ExtraMoves = CleanEmojiStrings(RaidEmbedEnglishHelpers.ExtraMoves),
-                RaidEmbedEnglishHelpers.ScaleText,
-                SpecialRewards = CleanEmojiStrings(RaidEmbedEnglishHelpers.SpecialRewards),
-                RaidEmbedInfoHelpers.ScaleNumber,
-                Names = names,
-                Code_encrypted = encryptedCode,
-                HatTrick = hatTrick,
-                Disband = disband,
-                UpNext = upnext,
-                RaidStart = raidstart,
-                ImageUrl = imageUrl,
-                LobbyFull = lobbyFull
-            };
-
-            try
-            {
-                var json = JsonConvert.SerializeObject(raidInfo, Formatting.Indented);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                string raidinfo = Encoding.UTF8.GetString(Convert.FromBase64String("aHR0cHM6Ly9nZW5wa20uY29tL3JhaWRzL3JhaWRfYXBpLnBocA=="));
-                var response = await _httpClient.PostAsync(raidinfo, content, token);
-            }
-            catch
-            {
-                // Silently handle network errors
-            }
-        }
-
-        /// <summary>
         /// Connects to online in the game
         /// </summary>
         private async Task<bool> ConnectToOnline(PokeRaidHubConfig config, CancellationToken token)
@@ -3994,7 +3898,7 @@ ALwkMx63fBR0pKs+jJ8DcFrcJR50aVv1jfIAQpPIK5G6Dk/4hmV12Hdu5sSGLl40
                             Title = "Experiencing Online Connection Issues",
                             Description = "The bot is experiencing issues connecting online. Please stand by as we try to resolve this issue.",
                             Color = Color.Red,
-                            ThumbnailUrl = "https://raw.githubusercontent.com/hexbyt3/sprites/main/imgs/x.png"
+                            ThumbnailUrl = "https://raw.githubusercontent.com/ThatOneCrab/sprites/main/imgs/x.png"
                         };
                         
                         //You should remove the await keyword since EchoUtil.RaidEmbed returns void, and replace null with an empty byte array to satisfy the non-nullable parameter.
@@ -4983,10 +4887,12 @@ ALwkMx63fBR0pKs+jJ8DcFrcJR50aVv1jfIAQpPIK5G6Dk/4hmV12Hdu5sSGLl40
 
             storyProgressLevel = storyProgressLevel switch
             {
-                3 => 1,
-                4 => 2,
-                5 => 3,
-                6 => 4,
+                1 => 0, // Level 1: 1-star only
+                2 => 0, // Level 2: 1-2 star (still uses progress 0)
+                3 => 1, // Level 3: 3-star
+                4 => 2, // Level 4: 4-star
+                5 => 3, // Level 5: 5-star
+                6 => 4, // Level 6: 6-star
                 0 => 0,
                 _ => 4 // default 6Unlocked
             };
@@ -5089,7 +4995,7 @@ ALwkMx63fBR0pKs+jJ8DcFrcJR50aVv1jfIAQpPIK5G6Dk/4hmV12Hdu5sSGLl40
 
             // Build the embed
             var teraTypeLower = strings.Types[teraType].ToLower();
-            var teraIconUrl = $"https://raw.githubusercontent.com/hexbyt3/sprites/main/teraicons/icon1/{teraTypeLower}.png";
+            var teraIconUrl = $"https://raw.githubusercontent.com/ThatOneCrab/sprites/main/teraicons/icon2/{teraTypeLower}.png";
             var disclaimer = $"Current Position: {queuePosition}";
             var titlePrefix = raid.IsShiny ? "Shiny " : "";
             var formName = ShowdownParsing.GetStringFromForm(pk.Form, strings, pk.Species, pk.Context);
@@ -5138,7 +5044,7 @@ ALwkMx63fBR0pKs+jJ8DcFrcJR50aVv1jfIAQpPIK5G6Dk/4hmV12Hdu5sSGLl40
                 embed.AddField("**__Special Rewards__**", "No special rewards available", true);
             }
 
-            var programIconUrl = "https://raw.githubusercontent.com/hexbyt3/sprites/main/imgs/icon4.png";
+            var programIconUrl = "https://raw.githubusercontent.com/ThatOneCrab/sprites/refs/heads/main/Cyberklawf.png";
             embed.WithFooter(new EmbedFooterBuilder()
             {
                 Text = disclaimer,

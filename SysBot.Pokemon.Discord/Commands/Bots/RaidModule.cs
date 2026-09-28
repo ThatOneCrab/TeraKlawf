@@ -766,15 +766,19 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
         {
             switch (storyProgressLevel)
             {
-                case 6: // Unlocked 6 Stars
+                case 6: // Unlocked 6 Stars - can do 3-7 stars
                     return level >= 3 && level <= 7;
-                case 5: // Unlocked 5 Stars
+                case 5: // Unlocked 5 Stars - can do 3-5 stars
                     return level >= 3 && level <= 5;
-                case 4: // Unlocked 4 Stars
+                case 4: // Unlocked 4 Stars - can do 3-4 stars
                     return level >= 3 && level <= 4;
-                case 3: // Unlocked 3 Stars
-                    return level == 3;
-                default: return false; // No 1 or 2 Star Unlocked
+                case 3: // Unlocked 3 Stars - can do 1-3 stars
+                    return level >= 1 && level <= 3;
+                case 2: // Unlocked Tera Raids (can do 1-2 stars)
+                    return level >= 1 && level <= 2;
+                case 1: // Just unlocked Tera Raids (can do 1 star)
+                    return level == 1;
+                default: return false;
             }
         }
 
@@ -787,7 +791,9 @@ namespace SysBot.Pokemon.Discord.Commands.Bots
                 5 => "5☆ Unlocked Progress",
                 4 => "4☆ Unlocked Progress",
                 3 => "3☆ Unlocked Progress",
-                _ => throw new ArgumentException("Invalid Story Progress Level... where are you getting your seeds?\nUse <https://genpkm.com/seeds.html> to get them."),
+                2 => "2☆ Unlocked Progress (Early Game)",
+                1 => "1☆ Unlocked Progress (Early Game)",
+                _ => throw new ArgumentException("Invalid Story Progress Level... where are you getting your seeds?\nUse <https://github.com/Manu098vm/Tera-Finder> to get them."),
             };
         }
 

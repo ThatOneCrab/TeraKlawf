@@ -75,12 +75,6 @@ namespace SysBot.Pokemon
         Custom
     }
 
-    public enum TeraIconType
-    {
-        Icon1, // Use special set
-        Icon2 // Use boring set
-    }
-
     public enum Action1Type
     {
         GoAllOut,
