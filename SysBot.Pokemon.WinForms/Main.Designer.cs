@@ -441,24 +441,34 @@ namespace SysBot.Pokemon.WinForms
             // Bots Panel
             botsPanel.BackColor = Color.FromArgb(28, 28, 28);
 
-            // Try to load background.gif
+            // Try to load background.gif from embedded resources first
             try
             {
-                string[] possiblePaths = new[]
+                try
                 {
-                    Path.Combine(AppContext.BaseDirectory, "background.gif"),
-                    Path.Combine(AppContext.BaseDirectory, "Resources", "background.gif"),
-                    Path.Combine(Directory.GetCurrentDirectory(), "background.gif"),
-                    Path.Combine(Directory.GetCurrentDirectory(), "Resources", "background.gif"),
-                };
-
-                foreach (var imagePath in possiblePaths)
+                    // Load from embedded resources (preferred for published builds)
+                    botsPanel.BackgroundImage = Properties.Resources.background;
+                    botsPanel.BackgroundImageLayout = ImageLayout.Stretch;
+                }
+                catch
                 {
-                    if (File.Exists(imagePath))
+                    // Fallback to file system for development
+                    string[] possiblePaths = new[]
                     {
-                        botsPanel.BackgroundImage = Image.FromFile(imagePath);
-                        botsPanel.BackgroundImageLayout = ImageLayout.Stretch;
-                        break;
+                        Path.Combine(AppContext.BaseDirectory, "background.gif"),
+                        Path.Combine(AppContext.BaseDirectory, "Resources", "background.gif"),
+                        Path.Combine(Directory.GetCurrentDirectory(), "background.gif"),
+                        Path.Combine(Directory.GetCurrentDirectory(), "Resources", "background.gif"),
+                    };
+
+                    foreach (var imagePath in possiblePaths)
+                    {
+                        if (File.Exists(imagePath))
+                        {
+                            botsPanel.BackgroundImage = Image.FromFile(imagePath);
+                            botsPanel.BackgroundImageLayout = ImageLayout.Stretch;
+                            break;
+                        }
                     }
                 }
             }
@@ -1144,21 +1154,29 @@ namespace SysBot.Pokemon.WinForms
             {
                 try
                 {
-                    // Try multiple possible locations for the image
-                    string[] possiblePaths = new[]
+                    // Try to load from embedded resources first (preferred for published builds)
+                    try
                     {
-                        Path.Combine(AppContext.BaseDirectory, "logo_background.png"),
-                        Path.Combine(AppContext.BaseDirectory, "Resources", "logo_background.png"),
-                        Path.Combine(Directory.GetCurrentDirectory(), "logo_background.png"),
-                        Path.Combine(Directory.GetCurrentDirectory(), "Resources", "logo_background.png"),
-                    };
-
-                    foreach (var imagePath in possiblePaths)
+                        _logoImage = Properties.Resources.logo_background;
+                    }
+                    catch
                     {
-                        if (File.Exists(imagePath))
+                        // Fallback to file system for development
+                        string[] possiblePaths = new[]
                         {
-                            _logoImage = Image.FromFile(imagePath);
-                            break;
+                            Path.Combine(AppContext.BaseDirectory, "logo_background.png"),
+                            Path.Combine(AppContext.BaseDirectory, "Resources", "logo_background.png"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "logo_background.png"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "Resources", "logo_background.png"),
+                        };
+
+                        foreach (var imagePath in possiblePaths)
+                        {
+                            if (File.Exists(imagePath))
+                            {
+                                _logoImage = Image.FromFile(imagePath);
+                                break;
+                            }
                         }
                     }
 
